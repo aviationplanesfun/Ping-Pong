@@ -1,140 +1,105 @@
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-const menu = document.getElementById("menu");
+// Basic Three.js setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-// Paddle settings
-const paddleWidth = 10, paddleHeight = 100;
-const playerSpeed = 6, aiSpeed = 3.5;
-let playerY = canvas.height / 2 - paddleHeight / 2;
-let aiY = canvas.height / 2 - paddleHeight / 2;
-let playerVelocity = 0;
+// Table
+const tableGeometry = new THREE.PlaneGeometry(20, 10);
+const tableMaterial = new THREE.MeshBasicMaterial({ color: 0x4CAF50, side: THREE.DoubleSide });
+const table = new THREE.Mesh(tableGeometry, tableMaterial);
+table.rotation.x = - Math.PI / 2;
+scene.add(table);
 
-// Ball settings
-let ballX = canvas.width / 2, ballY = canvas.height / 2;
-let ballSpeedX = 4, ballSpeedY = 4;
-const ballRadius = 10;
+// Ball
+const ballGeometry = new THREE.SphereGeometry(0.3, 32, 32);
+const ballMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFF00 });
+const ball = new THREE.Mesh(ballGeometry, ballMaterial);
+ball.position.set(0, 0.5, 0);
+scene.add(ball);
 
-let playerScore = 0, aiScore = 0;
-let gameRunning = false;
+// Paddles
+const paddleGeometry = new THREE.BoxGeometry(1, 0.2, 1);
+const paddleMaterial = new THREE.MeshBasicMaterial({ color: 0xFF5733 });
+const playerPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+playerPaddle.position.set(0, 0.2, 4.5);
+scene.add(playerPaddle);
 
-function startGame() {
-    menu.style.display = "none";
-    canvas.style.display = "block";
-    gameRunning = true;
-    gameLoop();
-}
+const aiPaddle = new THREE.Mesh(paddleGeometry, paddleMaterial);
+aiPaddle.position.set(0, 0.2, -4.5);
+scene.add(aiPaddle);
 
-function endGame() {
-    alert("Game Over!");
-    window.location.reload();
-}
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+scene.add(ambientLight);
 
-function drawPaddle(x, y) {
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(x, y, paddleWidth, paddleHeight);
-}
+// Camera Position
+camera.position.z = 15;
+camera.position.y = 10;
+camera.lookAt(0, 0, 0);
 
-function drawBall() {
-    ctx.beginPath();
-    ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffde59";
-    ctx.fill();
-    ctx.closePath();
-}
+// Game variables
+let ballSpeed = { x: 0.05, y: 0.05, z: 0.1 };
+let playerScore = 0;
+let aiScore = 0;
 
-function drawNet() {
-    ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = "#fff";
-    ctx.beginPath();
-    ctx.moveTo(canvas.width / 2, 0);
-    ctx.lineTo(canvas.width / 2, canvas.height);
-    ctx.stroke();
-}
+// Mouse control for player paddle
+document.addEventListener("mousemove", (event) => {
+    const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+    playerPaddle.position.x = mouseX * 10; // Scale to table width
+});
 
-function drawScore() {
-    ctx.font = "20px Arial";
-    ctx.fillStyle = "#ffde59";
-    ctx.fillText("Player: " + playerScore, 50, 30);
-    ctx.fillText("AI: " + aiScore, canvas.width - 100, 30);
-}
+// Game Loop
+function animate() {
+    requestAnimationFrame(animate);
 
-function resetBall() {
-    ballX = canvas.width / 2;
-    ballY = canvas.height / 2;
-    ballSpeedX = -ballSpeedX;
-}
+    // Move the ball
+    ball.position.x += ballSpeed.x;
+    ball.position.z += ballSpeed.z;
 
-function update() {
-    if (!gameRunning) return;
-
-    // Ball movement
-    ballX += ballSpeedX;
-    ballY += ballSpeedY;
-
-    // Ball collision with top and bottom walls
-    if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
-        ballSpeedY = -ballSpeedY;
+    // Ball collision with table edges
+    if (ball.position.x > 9.5 || ball.position.x < -9.5) {
+        ballSpeed.x = -ballSpeed.x;
     }
 
-    // Ball collision with player paddle
-    if (ballX - ballRadius < paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
-        ballSpeedX = -ballSpeedX;
+    // Basic AI movement
+    if (aiPaddle.position.x < ball.position.x) {
+        aiPaddle.position.x += 0.05;
+    } else if (aiPaddle.position.x > ball.position.x) {
+        aiPaddle.position.x -= 0.05;
     }
 
-    // Ball collision with AI paddle
-    if (ballX + ballRadius > canvas.width - paddleWidth && ballY > aiY && ballY < aiY + paddleHeight) {
-        ballSpeedX = -ballSpeedX;
+    // Ball collision with paddles
+    if (ball.position.z >= playerPaddle.position.z - 0.5 &&
+        ball.position.x >= playerPaddle.position.x - 0.5 &&
+        ball.position.x <= playerPaddle.position.x + 0.5) {
+        ballSpeed.z = -ballSpeed.z;
     }
-
-    // AI movement
-    if (aiY + paddleHeight / 2 < ballY) {
-        aiY += aiSpeed;
-    } else {
-        aiY -= aiSpeed;
+    if (ball.position.z <= aiPaddle.position.z + 0.5 &&
+        ball.position.x >= aiPaddle.position.x - 0.5 &&
+        ball.position.x <= aiPaddle.position.x + 0.5) {
+        ballSpeed.z = -ballSpeed.z;
     }
-
-    // Smooth player paddle movement
-    playerY += playerVelocity;
 
     // Scoring
-    if (ballX - ballRadius < 0) {
+    if (ball.position.z > 5) {
         aiScore++;
         resetBall();
-    } else if (ballX + ballRadius > canvas.width) {
+    } else if (ball.position.z < -5) {
         playerScore++;
         resetBall();
     }
 
-    // End game if a player reaches 10 points
-    if (playerScore === 10 || aiScore === 10) {
-        gameRunning = false;
-        alert(playerScore === 10 ? "Player wins!" : "AI wins!");
-        endGame();
-    }
+    renderer.render(scene, camera);
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawNet();
-    drawScore();
-    drawPaddle(0, playerY);
-    drawPaddle(canvas.width - paddleWidth, aiY);
-    drawBall();
+// Reset ball position after a score
+function resetBall() {
+    ball.position.set(0, 0.5, 0);
+    ballSpeed.z = -ballSpeed.z;
 }
 
-function gameLoop() {
-    update();
-    draw();
-    if (gameRunning) {
-        requestAnimationFrame(gameLoop);
-    }
-}
+// Start the game loop
+animate();
 
-// Smooth player paddle controls
-document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowUp") playerVelocity = -playerSpeed;
-    if (e.key === "ArrowDown") playerVelocity = playerSpeed;
-});
-document.addEventListener("keyup", (e) => {
-    if (e.key === "ArrowUp" || e.key === "ArrowDown") playerVelocity = 0;
-});
