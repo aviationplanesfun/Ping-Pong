@@ -80,6 +80,10 @@ let ballSpeed = { x: 0.05, y: 0, z: 0.1 };
 let playerScore = 0;
 let aiScore = 0;
 
+// Scoreboard elements
+const playerScoreElement = document.getElementById("playerScore");
+const aiScoreElement = document.getElementById("aiScore");
+
 // Mouse control for player paddle
 document.addEventListener("mousemove", (event) => {
     const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
@@ -121,10 +125,12 @@ function animate() {
     // Scoring
     if (ball.position.z > 5) {
         aiScore++;
+        aiScoreElement.textContent = `AI: ${aiScore}`;
         console.log("AI scored. Score - Player:", playerScore, "AI:", aiScore);
         resetBall();
     } else if (ball.position.z < -5) {
         playerScore++;
+        playerScoreElement.textContent = `Player: ${playerScore}`;
         console.log("Player scored. Score - Player:", playerScore, "AI:", aiScore);
         resetBall();
     }
@@ -142,5 +148,4 @@ function resetBall() {
 // Start the game loop
 animate();
 console.log("Game animation started.");
-
 
