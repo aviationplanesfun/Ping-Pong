@@ -36,4 +36,105 @@ function drawPaddle(x, y) {
 
 function drawBall() {
     ctx.beginPath();
-    ctx.arc(ballX,
+    ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+    ctx.fillStyle = "#ffde59";
+    ctx.fill();
+    ctx.closePath();
+}
+
+function drawNet() {
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = "#fff";
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 2, 0);
+    ctx.lineTo(canvas.width / 2, canvas.height);
+    ctx.stroke();
+}
+
+function drawScore() {
+    ctx.font = "20px Arial";
+    ctx.fillStyle = "#ffde59";
+    ctx.fillText("Player: " + playerScore, 50, 30);
+    ctx.fillText("AI: " + aiScore, canvas.width - 100, 30);
+}
+
+function resetBall() {
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+    ballSpeedX = -ballSpeedX;
+}
+
+function update() {
+    if (!gameRunning) return;
+
+    // Ball movement
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+
+    // Ball collision with top and bottom walls
+    if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
+        ballSpeedY = -ballSpeedY;
+    }
+
+    // Ball collision with player paddle
+    if (ballX - ballRadius < paddleWidth && ballY > playerY && ballY < playerY + paddleHeight) {
+        ballSpeedX = -ballSpeedX;
+    }
+
+    // Ball collision with AI paddle
+    if (ballX + ballRadius > canvas.width - paddleWidth && ballY > aiY && ballY < aiY + paddleHeight) {
+        ballSpeedX = -ballSpeedX;
+    }
+
+    // AI movement
+    if (aiY + paddleHeight / 2 < ballY) {
+        aiY += aiSpeed;
+    } else {
+        aiY -= aiSpeed;
+    }
+
+    // Smooth player paddle movement
+    playerY += playerVelocity;
+
+    // Scoring
+    if (ballX - ballRadius < 0) {
+        aiScore++;
+        resetBall();
+    } else if (ballX + ballRadius > canvas.width) {
+        playerScore++;
+        resetBall();
+    }
+
+    // End game if a player reaches 10 points
+    if (playerScore === 10 || aiScore === 10) {
+        gameRunning = false;
+        alert(playerScore === 10 ? "Player wins!" : "AI wins!");
+        endGame();
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawNet();
+    drawScore();
+    drawPaddle(0, playerY);
+    drawPaddle(canvas.width - paddleWidth, aiY);
+    drawBall();
+}
+
+function gameLoop() {
+    update();
+    draw();
+    if (gameRunning) {
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+// Smooth player paddle controls
+document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp") playerVelocity = -playerSpeed;
+    if (e.key === "ArrowDown") playerVelocity = playerSpeed;
+});
+document.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") playerVelocity = 0;
+});
