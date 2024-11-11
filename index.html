@@ -3,13 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Table Tennis Game</title>
+    <title>Stylized 3D Table Tennis Game</title>
     <style>
-        body { margin: 0; overflow: hidden; }
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; }
+
+        /* Scoreboard Styles */
+        #scoreboard {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px;
+            color: #ffffff;
+            font-size: 48px;
+            font-weight: bold;
+            pointer-events: none;
+        }
+        #playerScore, #aiScore {
+            color: #FFFFFF;
+        }
+
+        /* Background Gradient */
+        body {
+            background: linear-gradient(180deg, #76C7C0, #3AAFA9);
+        }
     </style>
 </head>
 <body>
+    <div id="scoreboard">
+        <div id="playerScore">0</div>
+        <div id="aiScore">0</div>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="script.js"></script>
 </body>
